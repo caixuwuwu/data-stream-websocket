@@ -1,0 +1,8 @@
+version: '2'
+services:
+  build-data-stream-websocket:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: data_stream_websocket
+    command: echo 'Image was built successfully'

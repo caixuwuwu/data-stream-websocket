@@ -1,0 +1,67 @@
+version: '2'
+services:
+  data-stream-websocket:
+    image: data_stream_websocket
+    # command: env
+    # tty: true
+    # environment:
+    #   - PYTHONUNBUFFERED=0
+    #   - BI_MYSQL_HOST=mysql-server-container
+    #   - BI_MYSQL_PORT=3306
+    #   - BI_MYSQL_USER=root
+    #   - BI_MYSQL_PASS=
+    #   - BI_MYSQL_DB=bi_da
+    #   - WEB_HOST=web-server-container
+    #   - THRIFT_HOST=thrift-server-container
+    #   - REDIS_HOST=redis-server-container
+    env_file:
+      - ../local.env
+    ports:
+      - 52475:52475
+    #   - 8001:8001
+      # - 9090:9090
+    volumes:
+      - ..:/data/websocket
+
+  data-stream-websocket-client:
+    image: data_stream_websocket
+    env_file:
+      - ../local.env
+    volumes:
+      - ..:/data/websocket
+    depends_on:
+      - data-stream-websocket
+      - redis-server
+      - kafka
+      - zookeeper
+    command: ["python", "ws_client.py"]
+
+  redis-server:
+    image: redis:4
+    # ports:
+    #   - 16379:6379
+    volumes:
+      - ../data/redis/4:/data
+    # command: ["redis-server", "--appendonly", "yes"]
+  phpredisadmin:
+    image: erikdubbelboer/phpredisadmin
+    environment:
+      - REDIS_1_HOST=redis-server
+      - REDIS_1_NAME=MyRedis
+    ports:
+      - 8080:80
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - '2181:2181'
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - '9092:9092'
+    links:
+      - zookeeper
+    hostname: kafka
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_CREATE_TOPICS=local.data.overtime.order:1:1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
